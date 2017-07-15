@@ -5,124 +5,24 @@
         <script src="jquery-3.1.1.min.js"></script>
         <script src="app.js"></script>
         <meta charset="utf-8">
-    </head>
-    <body> 
-        <h1>Отчеты по задачам</h1>
-        <h2 id="manualButton" type="button">Мануал</h2>
-        <div class="manual">
-            <ul>
-                <li>Выберите сотрудника - фильтр, в этом поле выбирается сотрудник ответственный за выполнение задачи.</li>
-                <li>Начальное время интервала - фильтр по дате создания задач. </li>
-                <li>Конечное время интервала - фильтр по дате создания задач, не может быть меньше значения Начальное время интервала</li>
-                <li>Показать просроченные задачи - фильтр позволяющий просмотреть только просроченные задачи</li>                
-            </ul>
-        </div>
-        <div id="app">
-            <div id="user-name"></div>
-            <table id="filterTable" class="filterTable">
-                <tr><td><h2>Настройки отчёта</h2></td></tr>
-                <tr class="labelRow">
-                    <td><label for="filterUsersList">Выберите сотрудника</label></td>
-                    <td><label for="filterBeginTime">Начальное время интервала</label></td>
-                    <td><label for="filterEndTime">Конечное время интервала</label></td>
-                    <td><label for="filterExpiredTask">Показать просроченные задачи</label></td>
-                    <td><label for="filterCompany">Выбор компании</label></td>
-                </tr>
-                <tr id="filterHead" class="filterHead">
-                    <form id="filterData">                    
-                        <td >                        
-                            <select id="filterUsersList" required name = "chosenUser">				            
-				                                            
-                            </select>
-                        </td>
-                        <td><input id="filterBeginTime" value="2013-01-01T00:00" type="datetime-local"></td>
-                        <td id="filterEndTime"></td>
-                        <td id="filterExpiredTask">                        
-                            <select id ="choosenTask" required name = "choosenTask">				            
-				                <option value = "Все">Все</option>
-                                <option value = "просроченные">Только просроченные</option>                                
-                            </select>
-                        </td>
-                                           
-                        <td><input id="filterButton" type="button" value="Сформировать отчет"></td>
-                    </form>
-                </tr>
-            </table>
-            <h2 style="text-align:center" class="mainTableHeader">Отчет</h2>
-            <table id="mainTable" class="mainTable" width="100%">                
-                <tr id="tableHead" class="tableHead">
-                    <td class="tableNumber">№</td>                    
-                    <td id="tableTaskName">Наименование задачи</td>
-                    <td id="tableDeadline">Дата создания задачи</td>
-                    <td id="tableDeadline">Крайний срок</td>
-                    <td id="tableClosedDate">Дата завершения</td>
-                    <td id="tableClosedDate">Ссылка на задачу</td>
-                </tr>
-                <tr id="tableBody"></tr>
-            </table>
-        </div>
         
-        <script>
-           
-                
-            
-           $('#filterButton').click(function(){
-               $('#mainTable').html('<tr id="tableHead" class="tableHead"><td class="tableNumber">№</td><td id="tableTaskName">Наименование задачи</td><td id="tableDeadline">Дата создания задачи</td><td id="tableDeadline">Крайний срок</td><td id="tableClosedDate">Дата завершения</td><td id="tableClosedDate">Ссылка на задачу</td></tr><tr id="tableBody"></tr>');
-               /*Ввод пользовательских данных*/
-                let filteredUser;                
-                var filterBeginTime= new Date($('#filterBeginTime').val());
-                var filterEndTime= new Date($('#endDate').val());
-                var filterExpiredTask=$('#choosenTask').val();
-                let status=5;
-               
-                if (filterExpiredTask == "просроченные"){
-                    status=0;
-                    
-                }
-                
-                
-               /*Проверка валидности даты*/
-                    if (filterEndTime<filterBeginTime|| filterBeginTime== "Invalid Date"||filterEndTime== "Invalid Date"){
-                   alert("Введите корректное время");
-                }
-               
-               /*Получение фильтрованных данных из задач*/
-               BX24.callMethod('user.get', {"LAST_NAME": `${$('#filterUsersList').val()}`}, function(result){
-                  filteredUser=result.data()[0].ID;
-                   
-                                       BX24.callMethod('task.item.list',[{ID : 'desc'},
-                                                  {RESPONSIBLE_ID:filteredUser,
-                                                  ">=CREATED_DATE":filterBeginTime,
-                                                   "<=CREATED_DATE":filterEndTime,
-                                                   "<STATUS":status                                                  
-                                                  },{},{}],function(result){
-                                           
-                            for (var i=0;i<50;i++){                                      
-                                        $('#tableBody').after(`<tr>
-                                                    <td>${i+1}</td>
-                                                    <td>${result.data()[i].TITLE}</td>
-                                                    <td>${result.data()[i].CREATED_DATE}</td>
-                                                    <td>${result.data()[i].DEADLINE}</td>
-                                                    <td>${result.data()[i].CLOSED_DATE}</td>
-                                                    <td><a href="https://m2m-sib.bitrix24.ru/company/personal/user/${filteredUser}/tasks/task/view/${result.data()[i].ID}/">Ссылка на задачу</a></td>       
-                                                </tr>`);
-                                }                    	
-                            if (result.more()){               
-                                result.next();
-                            }  
-                            });
-               
-                
-               });  
-                   
-                 
-           });
-                
-        </script>
+        
+    </head>
+    <body>         
+        <header>
+            Очистка диска
+        </header>     
+        <form>
+            <label>Введите границу очистки по дате: формат: "yyyy-mm-dd"<input id="date" type="text"></label><br>
+            <label>Введите ID папки<input id="folder" type="number"></label><br>
+            <input id="find-button" type="button" value="найти файлы для удаления">
+            <input id="calc-button" type="button" value="подготовить файлы к удалению">
+            <input id="delete-button" type="button" value="удалить найденные файлы">  
+        </form>
+        <div id="delete-arr-length">
+        </div>
+        <div id="delete-ready-info">
+        </div>        
+        <img id="loading-pic" src="ajax-loader.gif" style="visibility:hidden">        
     </body>    
 </html>
-<!--
-                    
-
-2016-11-05T12:11:21+03:00
-https://m2m-sib.bitrix24.ru/company/personal/user/RESPONSIBLE_ID/tasks/task/view/TASK_ID/-->
