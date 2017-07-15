@@ -1,10 +1,12 @@
 $(document).ready(function(){
-    let deleteDate, folderID, index;
+    let deleteDate, folderID, searchingFolders;
     let fileDeleteId=[];
     let indexDeleteFile=[];
     let IDarrForDeleting=[];
     let entityID=[];
     let foldersID=[];
+    let entetysIDMatrix=[];
+    let currentStringEntetysIDMatrix=[];
     let styles={visibility:"visible",position:"absolute",top:"25px",left:"600px"};
     
     $('#find-button').click(function(){
@@ -20,7 +22,8 @@ $(document).ready(function(){
                 if (result.error()){                    
                     console.error(result.error()); 
                 } else{                
-                    result.data().forEach(function(file, i){                          entityID.push(file.ID);
+                    result.data().forEach(function(file, i){                          
+                        entityID.push(file.ID);
                     }); 
                     if(result.more()){
                         result.next();
@@ -28,33 +31,35 @@ $(document).ready(function(){
                         
                         /*Поиск всех папок на диске и сохрание их ID в список*/
                         
-                        let searchingFolders=setInterval(function (){
-                            entityID.forEach(function(entity,i){
-                            BX24.callMethod("disk.storage.getchildren",
-		                       {id: entity},
-		                       function (result){
-                                 console.log(i);
-			                     if (result.error() || i%50==0){
-                                     console.log("im here!");
-                                     break;
-                                     console.error(result.error());
-                                 } else{                                    
-                                    result.data().forEach(function(file, i){ 
-                                        foldersID.push(file.ID); 
-                                    });
-                                    entityID.shift();
-                                    if(result.more()){
+                        entetysIDMatrix=MakeItMatrix(entityID, 50);
+                        let k=0;
+                        searchingFolders=setInterval(function (){
+                            currentStringEntetysIDMatrix=entetysIDMatrix[k];
+                            if (currentStringEntetysIDMatrix!=undefined){
+                                currentStringEntetysIDMatrix.forEach(function(entity,i){
+                                    BX24.callMethod("disk.storage.getchildren",
+		                          {id: entity},
+		                          function (result){
+                                    console.log(i);
+			                         if (result.error()){
+                                         console.error(result.error());
+                                    } else{                                    
+                                        result.data().forEach(function(folder, i){ 
+                                        foldersID.push(folder.ID); 
+                                        });
+                                        entityID.shift();
+                                        if(result.more()){
                                         result.next();
-                                    } else {
-                                        console.log(foldersID);
+                                        } 
                                     }
-                                }
-		                        });
-                           });
-                          if (entityID.length==0){
-                              clearInterval(searchingFolders);
-                          }    
-                        }, 10000);
+		                          });
+                                });
+                            } else {
+                              console.log(foldersID);
+                              clearInterval(searchingFolders);  
+                            }
+                          return k++;
+                        }, 15000);
                         
                     }
                 }
@@ -87,9 +92,9 @@ $(document).ready(function(){
                 }
             }
 		});
-        */
+        */ 
     });
-        
+       
     
     
     $('#delete-button').click(function(){
@@ -131,27 +136,31 @@ $(document).ready(function(){
     
     $('#calc-button').click(function(){
         $('#loading-pic').css(styles);
-        index = Math.floor(fileDeleteId.length/50);        
-        for (var i=0; i<=index; i++){
-            indexDeleteFile[i]=[];
-            if (i==index){
-                for(var j=0; j<50; j++){
-                    if(fileDeleteId[0]!=undefined){
-                        indexDeleteFile[i][j]=fileDeleteId.pop();
-                    }                    
-                }
-                $('#loading-pic').css({visibility:"hidden"});
-                $('#delete-ready-info').html('Файлы готовы к удалению');
-            } else {
-                for(var j=0; j<50; j++){                
-                    indexDeleteFile[i][j]=fileDeleteId.pop();                
-                } 
-            }
-        }
+        IDarrForDeleting=MakeItMatrix(fileDeleteId, 50);        
+        $('#loading-pic').css({visibility:"hidden"});
+        $('#delete-ready-info').html('Файлы готовы к удалению');
     });    
 }); 
 
-
+function MakeItMatrix(array, length){    
+    let matrix=[];
+    let index = Math.floor(array.length/length);     
+        for (var i=0; i<=index; i++){
+            matrix[i]=[];            
+            if (i==index){
+                for(var j=0; j<length; j++){
+                    if(array[0]!=undefined){
+                        matrix[i][j]=array.pop();
+                    }                    
+                }
+            } else {
+                for(var j=0; j<length; j++){                
+                    matrix[i][j]=array.pop();                    
+                } 
+            }
+    }
+    return matrix;
+}
 
 
     
