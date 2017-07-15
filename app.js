@@ -1,14 +1,15 @@
 $(document).ready(function(){
-    let deleteDate;
+    let deleteDate, length;
     let fileDeleteId=[];
     let indexDeleteFile=[];
     let IDarrForDeleting=[];
     let entityID=[];
-    let foldersID=[];
-    let entetysIDMatrix=[];    
+    let foldersID=[];      
     let styles={visibility:"visible",position:"absolute",top:"25px",left:"600px"};
     let foldersFound = new Event("click");
     let entetyesFound = new Event("dblclick");
+    var t=0; // счетчик для хранилищ данных
+    let l=0; // счетчик для папок
     
     
     $('#find-button').click(function(){
@@ -24,12 +25,14 @@ $(document).ready(function(){
                 if (result.error()){                    
                     console.error(result.error()); 
                 } else{                
-                    result.data().forEach(function(file, i){                          
-                        entityID.push(file.ID);
+                    result.data().forEach(function(entity, i){                          
+                        entityID.push(entity.ID);
                     }); 
                     if(result.more()){
                         result.next();
-                    } else{ 
+                    } else{
+                        $('#entetyes-id').html('Найдено '+entityID.length+' хранилищ данных');
+                        $('#folders-id').html('Идет поиск папок');
                         elem.dispatchEvent(entetyesFound);
                     }
                 }
@@ -38,51 +41,54 @@ $(document).ready(function(){
     
      /*Поиск всех папок на диске и сохрание их ID в список*/
     
-    $('#elem').dblclick(function(){        
-        entetysIDMatrix=MakeItMatrix(entityID, 50);
-        let k=0;
-        let currentStringEntetysIDMatrix=[];
-        let searchingFolders=setInterval(function (){
-            currentStringEntetysIDMatrix=entetysIDMatrix[k];
-            if (currentStringEntetysIDMatrix!=undefined){
-                currentStringEntetysIDMatrix.forEach(function(entity,i){
-                    BX24.callMethod("disk.storage.getchildren",{id: entity, filter: {"<CREATE_TIME": deleteDate}},function (result){                                    
-			             if (result.error()){
-                            console.error(result.error());
-                        } else{                                    
+    $('#elem').dblclick(function(){       
+        if(entityID[t]!=undefined){
+                BX24.callMethod("disk.storage.getchildren",{id: entityID[t], filter: {"<CREATE_TIME": deleteDate}},function (result){                                    
+			             if (result.error()){                             
+                                console.log("!!!!ID of FAILED entety is:  "+entityID[t]);                                
+                                elem.dispatchEvent(entetyesFound);                                                        
+                         } else{
+                            if(result.data().length==0){
+                                setTimeout(function(){
+                                    console.log("ID of checked entety is: "+entityID[t]);
+                                    t++;
+                                    elem.dispatchEvent(entetyesFound);
+                                }, 250);                                
+                            }
                             result.data().forEach(function(folder, i){ 
-                                foldersID.push(folder.ID); 
-                            });
-                            entityID.shift();
+                                foldersID.push(folder.ID);                                
+                                length=result.data().length-1;                                
+                                if (i==length){
+                                    setTimeout(function(){
+                                        console.log("ID of checked entety is: "+entityID[t]);
+                                        t++;
+                                        elem.dispatchEvent(entetyesFound);
+                                    }, 250);                                    
+                                }
+                            });                            
                             if(result.more()){
                                 result.next();
-                            } 
+                            }                               
                         }
 		              });
-                });
-            } else {
-                console.log(foldersID);
-                clearInterval(searchingFolders);                                
-                elem.dispatchEvent(foldersFound);
-            }
-            return k++;
-        }, 15000);
+             console.log(entityID[t]+" checking...");
+        } else{
+            $('#folders-id').html('Найдено '+foldersID.length+' папок');
+            elem.dispatchEvent(foldersFound);           
+        }        
     });
        
     /*Поиск всех файлов на диске соответствующих фильтру и сохрание их ID в список*/
     
     $('#elem').click(function(){
-        let folderMatrix=MakeItMatrix(foldersID, 1);
-        let l=0;
-        let currentStringOfFolders=[];
-        let searchingFiles=setInterval(function(){
-            currentStringOfFolders=folderMatrix[l];            
-            if (currentStringOfFolders!=undefined){
-                currentStringOfFolders.forEach(function(folder,i){
-                    BX24.callMethod("disk.folder.getchildren",{id: folder,filter: {"<UPDATE_TIME": deleteDate}},function (result){
+        if (foldersID[l]!=undefined){
+            BX24.callMethod("disk.folder.getchildren",{id: foldersID[l],filter: {"<UPDATE_TIME": deleteDate}},function (result){
 			             if (result.error()){
                              console.error(result.error());
-                        } else{
+                             setTimeout(function(){
+                                 elem.dispatchEvent(foldersFound);
+                             },1000);
+                         } else{
                             var files=[];
                                 result.data().forEach(function(file, i){ 
                                     files.push(file.ID);
@@ -91,28 +97,21 @@ $(document).ready(function(){
                                 if(result.more()){
                                     result.next();
                                 } else {
-                                    console.log("Files in folder: "+currentStringOfFolders[0]+"\n"+files);
+                                    console.log("Files in folder: "+foldersID[l]+"\n"+files);
+                                    l++;
+                                    elem.dispatchEvent(foldersFound);
                                 }
                         }
 		              });
-                });
-            } else {
+        } else {
                 $('#delete-arr-length').html('Вы можете удалить '+fileDeleteId.length+" файлов."+" Удаление файлов займет около: "+Math.floor(fileDeleteId.length/120)+" минут");
                 $('#loading-pic').css({visibility:"hidden"});
                 $('#delete-ready-info').html('');
                 clearInterval(searchingFiles);
-            }
-        return l++;                                    
-        }, 5000);  
+        }
     });    
     
     
-    $('#calc-button').click(function(){
-        $('#loading-pic').css(styles);
-        IDarrForDeleting=MakeItMatrix(fileDeleteId, 50);        
-        $('#loading-pic').css({visibility:"hidden"});
-        $('#delete-ready-info').html('Файлы готовы к удалению');
-    });
     
     $('#delete-button').click(function(){
         $('#loading-pic').css(styles);        
@@ -149,26 +148,3 @@ $(document).ready(function(){
         }, 25000);
     });
 }); 
-
-function MakeItMatrix(array, length){    
-    let matrix=[];
-    let index = Math.floor(array.length/length);     
-        for (var i=0; i<=index; i++){
-            matrix[i]=[];            
-            if (i==index){
-                for(var j=0; j<length; j++){
-                    if(array[0]!=undefined){
-                        matrix[i][j]=array.pop();
-                    }                    
-                }
-            } else {
-                for(var j=0; j<length; j++){                
-                    matrix[i][j]=array.pop();                    
-                } 
-            }
-    }
-    return matrix;
-}
-
-
-    
