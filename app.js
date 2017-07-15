@@ -1,13 +1,15 @@
 $(document).ready(function(){
-    let deleteDate, folderID, searchingFolders;
+    let deleteDate;
     let fileDeleteId=[];
     let indexDeleteFile=[];
     let IDarrForDeleting=[];
     let entityID=[];
     let foldersID=[];
-    let entetysIDMatrix=[];
-    let currentStringEntetysIDMatrix=[];
+    let entetysIDMatrix=[];    
     let styles={visibility:"visible",position:"absolute",top:"25px",left:"600px"};
+    let foldersFound = new Event("click");
+    let entetyesFound = new Event("dblclick");
+    
     
     $('#find-button').click(function(){
         deleteDate=$('#date').val();
@@ -27,75 +29,90 @@ $(document).ready(function(){
                     }); 
                     if(result.more()){
                         result.next();
-                    } else{
-                        
-                        /*Поиск всех папок на диске и сохрание их ID в список*/
-                        
-                        entetysIDMatrix=MakeItMatrix(entityID, 50);
-                        let k=0;
-                        searchingFolders=setInterval(function (){
-                            currentStringEntetysIDMatrix=entetysIDMatrix[k];
-                            if (currentStringEntetysIDMatrix!=undefined){
-                                currentStringEntetysIDMatrix.forEach(function(entity,i){
-                                    BX24.callMethod("disk.storage.getchildren",
-		                          {id: entity},
-		                          function (result){
-                                    console.log(i);
-			                         if (result.error()){
-                                         console.error(result.error());
-                                    } else{                                    
-                                        result.data().forEach(function(folder, i){ 
-                                        foldersID.push(folder.ID); 
-                                        });
-                                        entityID.shift();
-                                        if(result.more()){
-                                        result.next();
-                                        } 
-                                    }
-		                          });
-                                });
-                            } else {
-                              console.log(foldersID);
-                              clearInterval(searchingFolders);  
-                            }
-                          return k++;
-                        }, 15000);
-                        
+                    } else{ 
+                        elem.dispatchEvent(entetyesFound);
                     }
                 }
-            });
-        /*Поиск всех файлов на диске соответствующих фильтру и сохрание их ID в список*/
-        /*
-        BX24.callMethod(
-		"disk.folder.getchildren",
-		{
-			id: folderID,
-			filter: {
-				"<UPDATE_TIME": deleteDate
-			}
-		},
-		function (result){
-			if (result.error()){
-                console.error(result.error());
-            }
-			else{
-                result.data().forEach(function(file, i){                    
-                    fileDeleteId.push(file.ID);
+            }); 
+    });
+    
+     /*Поиск всех папок на диске и сохрание их ID в список*/
+    
+    $('#elem').dblclick(function(){        
+        entetysIDMatrix=MakeItMatrix(entityID, 50);
+        let k=0;
+        let currentStringEntetysIDMatrix=[];
+        let searchingFolders=setInterval(function (){
+            currentStringEntetysIDMatrix=entetysIDMatrix[k];
+            if (currentStringEntetysIDMatrix!=undefined){
+                currentStringEntetysIDMatrix.forEach(function(entity,i){
+                    BX24.callMethod("disk.storage.getchildren",{id: entity, filter: {"<CREATE_TIME": deleteDate}},function (result){                                    
+			             if (result.error()){
+                            console.error(result.error());
+                        } else{                                    
+                            result.data().forEach(function(folder, i){ 
+                                foldersID.push(folder.ID); 
+                            });
+                            entityID.shift();
+                            if(result.more()){
+                                result.next();
+                            } 
+                        }
+		              });
                 });
-                
-                if(result.more()){
-                    result.next();
-                } else {
-                    $('#delete-arr-length').html('Вы можете удалить '+fileDeleteId.length+" файлов."+" Удаление файлов займет около: "+Math.floor(fileDeleteId.length/120)+" минут");
-                    $('#loading-pic').css({visibility:"hidden"});
-                    $('#delete-ready-info').html('');
-                }
+            } else {
+                console.log(foldersID);
+                clearInterval(searchingFolders);                                
+                elem.dispatchEvent(foldersFound);
             }
-		});
-        */ 
+            return k++;
+        }, 15000);
     });
        
+    /*Поиск всех файлов на диске соответствующих фильтру и сохрание их ID в список*/
     
+    $('#elem').click(function(){
+        let folderMatrix=MakeItMatrix(foldersID, 1);
+        let l=0;
+        let currentStringOfFolders=[];
+        let searchingFiles=setInterval(function(){
+            currentStringOfFolders=folderMatrix[l];            
+            if (currentStringOfFolders!=undefined){
+                currentStringOfFolders.forEach(function(folder,i){
+                    BX24.callMethod("disk.folder.getchildren",{id: folder,filter: {"<UPDATE_TIME": deleteDate}},function (result){
+			             if (result.error()){
+                             console.error(result.error());
+                        } else{
+                            var files=[];
+                                result.data().forEach(function(file, i){ 
+                                    files.push(file.ID);
+                                    fileDeleteId.push(file.ID);
+                                });
+                                if(result.more()){
+                                    result.next();
+                                } else {
+                                    console.log("Files in folder: "+currentStringOfFolders[0]+"\n"+files);
+                                }
+                        }
+		              });
+                });
+            } else {
+                $('#delete-arr-length').html('Вы можете удалить '+fileDeleteId.length+" файлов."+" Удаление файлов займет около: "+Math.floor(fileDeleteId.length/120)+" минут");
+                $('#loading-pic').css({visibility:"hidden"});
+                $('#delete-ready-info').html('');
+                clearInterval(searchingFiles);
+            }
+        return l++;                                    
+        }, 5000);  
+    });    
+    
+    
+    $('#calc-button').click(function(){
+        $('#loading-pic').css(styles);
+        IDarrForDeleting=MakeItMatrix(fileDeleteId, 50);        
+        $('#loading-pic').css({visibility:"hidden"});
+        $('#delete-ready-info').html('Файлы готовы к удалению');
+    });
     
     $('#delete-button').click(function(){
         $('#loading-pic').css(styles);        
@@ -130,16 +147,7 @@ $(document).ready(function(){
             }
             return i++;
         }, 25000);
-        
-        
     });
-    
-    $('#calc-button').click(function(){
-        $('#loading-pic').css(styles);
-        IDarrForDeleting=MakeItMatrix(fileDeleteId, 50);        
-        $('#loading-pic').css({visibility:"hidden"});
-        $('#delete-ready-info').html('Файлы готовы к удалению');
-    });    
 }); 
 
 function MakeItMatrix(array, length){    
