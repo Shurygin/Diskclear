@@ -136,7 +136,7 @@ $(document).ready(function(){
                         }
 		              });
         } else {                
-            $('#delete-arr-length').html('Вы можете удалить '+fileDeleteId.length+" файлов."+" Удаление файлов займет около: "+Math.floor(fileDeleteId.length/120)+" минут");
+            $('#delete-arr-length').html('Вы можете удалить '+fileDeleteId.length+" файлов."+" Удаление файлов займет около: "+Math.floor(fileDeleteId.length/110)+" минут");
             fileIDMatrix=MakeItMatrix(fileDeleteId,matrixLength);
             $('#loading-pic').css({visibility:"hidden"});
             $('#delete-ready-info').html('');
