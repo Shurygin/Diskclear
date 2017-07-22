@@ -19,7 +19,7 @@ $(document).ready(function(){
     
     
     $('#find-button').click(function(){        
-        deleteDate=$('#date').val();
+        deleteDate=$('#date').val().substr(0,9);
         check=dateValidation(deleteDate);
         if (check){
            deleteDate+="T00:00:00+03:00"
