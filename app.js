@@ -14,18 +14,21 @@ $(document).ready(function(){
     var t=0; // счетчик для хранилищ данных
     let l=0; // счетчик для папок
     let f=0; // счетчик для файлов
+    let year, month, day, firstDash, secondDash, currentDate, currentYear,check; // для валидации даты
     
     
-    $('#find-button').click(function(){
+    
+    $('#find-button').click(function(){        
         deleteDate=$('#date').val();
-        deleteDate+="T00:00:00+03:00"
-        folderID=$('#folder').val();        
-        $('#loading-pic').css(styles);
         
-        /*Поиск всех хранилищ на диске и сохранение их ID в список*/
+        if (check){
+           deleteDate+="T00:00:00+03:00"
+            folderID=$('#folder').val();        
+            $('#loading-pic').css(styles);
         
-        BX24.callMethod("disk.storage.getlist",{},		
-            function (result){
+            /*Поиск всех хранилищ на диске и сохранение их ID в список*/
+        
+            BX24.callMethod("disk.storage.getlist",{},function (result){
                 if (result.error()){                    
                     console.error(result.error()); 
                 } else{                
@@ -41,6 +44,9 @@ $(document).ready(function(){
                     }
                 }
             }); 
+        } else {
+            $('#entetyes-id').html('Введена не корректная дата');
+        }
     });
     
      /*Поиск всех папок на диске и сохрание их ID в список*/
@@ -197,4 +203,26 @@ function MakeItMatrix(array, length){
              }
      }
      return matrix;
- }
+}
+function dateValidation(deleteDate){
+    year=+deleteDate.substr(0,4);
+    firstDash=deleteDate.substr(4,1);
+    month=+deleteDate.substr(5,2);
+    secondDash=deleteDate.substr(7,1);
+    day=+deleteDate.substr(8,2); 
+    currentDate = new Date();
+    currentYear=currentDate.getFullYear();
+    if (year<=2010 || year>currentYear){
+        return false;
+    }
+    if (firstDash!="-" || secondDash!="-"){
+       return false; 
+    }
+    if (month<0 || month > 12){
+       return false; 
+    }
+    if (day<0||day>31|| day>29 && month==2){
+       return false; 
+    }
+    return true;
+}
