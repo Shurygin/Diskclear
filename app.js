@@ -20,7 +20,7 @@ $(document).ready(function(){
     
     $('#find-button').click(function(){        
         deleteDate=$('#date').val();
-        
+        check=dateValidation(deleteDate);
         if (check){
            deleteDate+="T00:00:00+03:00"
             folderID=$('#folder').val();        
